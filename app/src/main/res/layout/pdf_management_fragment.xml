@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <FrameLayout
+        android:id="@+id/frame_layout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/background"
+            android:scaleType="centerCrop"
+            android:src="@drawable/loading" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/title"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:gravity="center"
+        android:layout_height="0dp"
+        android:text="@string/pdf_management_title"
+        android:textColor="@color/black"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/name"
+        android:textSize='30sp'/>
+
+    <TextView
+        android:id="@+id/name"
+        android:textStyle="bold"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:textColor="@color/black"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:layout_constraintBottom_toTopOf="@id/info"
+        android:textSize='20sp'/>
+
+    <TextView
+        android:id="@+id/info"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:text="@string/pdf_management_info"
+        android:textColor="@color/black"
+        android:textSize='20sp'
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/studies"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/name" />
+
+    <Button
+        android:id="@+id/studies"
+        android:textSize='18sp'
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:text="@string/studies_on_pdf_subject"
+        app:layout_constraintBottom_toTopOf='@id/questions'
+        app:layout_constraintTop_toBottomOf="@+id/info"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:paddingHorizontal="20dp"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/black"
+        />
+
+    <Button
+        android:id="@+id/questions"
+        android:textSize='18sp'
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        android:text="@string/questions_about_my_pdf"
+        app:layout_constraintBottom_toTopOf='@id/summarize'
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/studies"
+        android:paddingHorizontal="20dp"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/black"
+        />
+
+    <Button
+        android:id="@+id/summarize"
+        android:textSize='18sp'
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:text="@string/summarize_my_pdf"
+        android:visibility="invisible"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/questions"
+        android:paddingHorizontal="50dp"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/black"/>
+
+    <TextView
+        android:id="@+id/loading"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="visible"
+        android:text="@string/loading"
+        android:textSize='20sp'
+        android:textColor="@color/black"
+        android:gravity="center"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/questions" />
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

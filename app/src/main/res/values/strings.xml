@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">contentify</string>
+    <string name="no_permissions_message">Can\'t open file system without permission</string>
+    <string name="summarize_my_pdf">Summarize my pdf            </string>
+    <string name="questions_about_my_pdf">Create questions and answers</string>
+    <string name="studies_on_pdf_subject">Studies on the pdf subject  </string>
+    <string name="pdf_management_title">Your pdf is: </string>
+    <string name="pdf_management_info">Information processing option:</string>
+    <string name="summarized_text">your pdf summary:\n</string>
+    <string name="background">background</string>/
+    <string name="app_description">Brings out the best from text</string>
+    <string name="pick_pdf">Click To Pick PDF From Storage</string>
+    <string name="loading">"loading your pdf "</string>
+    <string name="questions_text">questions on your text:\n</string>
+    <string name="studies_text">studies that relevant for the text:\n</string>
+</resources>

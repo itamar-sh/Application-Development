@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/navigation"
+    app:startDestination="@id/welcomeScreenFragment">
+    <fragment
+        android:id="@+id/welcomeScreenFragment"
+        android:name="com.example.contentify.fragment.WelcomeScreenFragment">
+        <action
+            android:id="@+id/action_welcomeScreenFragment_to_pdfManagementFragment"
+            app:destination="@id/pdfManagementFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/pdfManagementFragment"
+        android:name="com.example.contentify.fragment.PdfManagementFragment">
+        <argument
+            android:name="pdfItem"
+            app:argType="com.example.contentify.PdfItem" />
+        <action
+            android:id="@+id/action_pdfManagementFragment_to_summarizeScreenFragment"
+            app:destination="@id/summarizeScreenFragment" />
+        <action
+            android:id="@+id/action_pdfManagementFragment_to_studiesScreenFragment"
+            app:destination="@id/studiesScreenFragment" />
+        <action
+            android:id="@+id/action_pdfManagementFragment_to_questionsScreenFragment"
+            app:destination="@id/questionsScreenFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/summarizeScreenFragment"
+        android:name="com.example.contentify.fragment.SummarizeScreenFragment">
+        <argument
+            android:name="pdfItem"
+            app:argType="com.example.contentify.PdfItem" />
+        <argument
+            android:name="jobId"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/questionsScreenFragment"
+        android:name="com.example.contentify.fragment.QuestionsScreenFragment">
+        <argument
+            android:name="pdfItem"
+            app:argType="com.example.contentify.PdfItem" />
+        <argument
+            android:name="jobId"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/studiesScreenFragment"
+        android:name="com.example.contentify.fragment.StudiesScreenFragment">
+        <argument
+            android:name="pdfItem"
+            app:argType="com.example.contentify.PdfItem" />
+        <argument
+            android:name="jobId"
+            app:argType="string" />
+    </fragment>
+</navigation>
