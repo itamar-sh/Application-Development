@@ -1,0 +1,237 @@
+openapi: 3.0.3
+info:
+  title: Contentify - OpenAPI 3.0
+  description: |-
+    This document describes the 5 endpoint that the contentify system should support.
+    Each section has just one endpoint that should be implemented in the AWS Lambdas.
+  version: 1.0.0
+tags:
+  - name: pdf-uploader
+    description: Fetching a job ID and URL to upload an pdf to
+  - name: pdf-getter
+    description: Fetching a URL from which to download the old pdfs from s3 to the app
+  - name: pdf-get-summarized-pdf
+    description: Fetching a URL from which to download the summarized pdf from s3 to the app
+  - name: pdf-get-questions
+    description: Fetching a URL from which to download the questions from s3 to the app
+  - name: pdf-get-studies
+    description: Fetching a URL from which to download the studies link from s3 to the app
+
+paths:
+  /:
+    post:
+      servers:
+        - url: https://ENTER_PDF_UPLOADER_LAMBDA_URL
+      tags:
+        - pdf-uploader
+      summary: Generate a new pdf processing job
+      description: Generate a job ID and a presigned URL to which an pdf to be procssed will be uploaded to
+      operationId: pdfUploader
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PdfUpload'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfUploadResponse'
+        '400':
+          description: Bad request
+    get:
+      servers:
+        - url: https://ENTER_PDF_GETTER_LAMBDA_URL
+      tags:
+        - pdf-getter
+      summary: Get the olds pdf or None if the db is empty
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfGetterResponse'
+        '400':
+          description: Bad request
+  /summarised:
+    get:
+      servers:
+        - url: https://ENTER_PDF_GET_SUMMARIZED_LAMBDA_URL
+      tags:
+        - pdf-get-summarized-pdf
+      summary: Get the summarized pdf or the current status of the processing job
+      parameters:
+        - in: query
+          name: jobId
+          schema:
+            type: string
+          required: true
+          description: The job ID that was returned when the pdf uploader was called
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfGetSummarizedResponse'
+        '400':
+          description: Bad request
+  /questions:
+      get:
+        servers:
+          - url: https://ENTER_PDF_GET_QUESTIONS_LAMBDA_URL
+        tags:
+          - pdf-get-questions
+        summary: Get the questions data or the current status of the processing job
+        parameters:
+          - in: query
+            name: jobId
+            schema:
+              type: string
+            required: true
+            description: The job ID that was returned when the pdf uploader was called
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PdfGetQuestionsResponse'
+          '400':
+            description: Bad request
+  /studies:
+    get:
+      servers:
+        - url: https://ENTER_PDF_GET_STUDIES_LAMBDA_URL
+      tags:
+        - pdf-get-studies
+      summary: Get the questions data or the current status of the processing job
+      parameters:
+        - in: query
+          name: jobId
+          schema:
+            type: string
+          required: true
+          description: The job ID that was returned when the pdf uploader was called
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PdfGetStudiesResponse'
+        '400':
+          description: Bad request
+components:
+  schemas:
+    PdfUpload:
+      type: object
+      properties:
+        fileName:
+          type: string
+          example: "test-pdf.pdf"
+    PdfUploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          example: 
+            https://some-bucket.s3.amazonaws.com/test-pdf.pdf?AWSAccessKeyId=AWSAccessKeyId&Signature=Signature&x-amz-meta-job-id=fd440257-1552-47e7-93a9-87d7f7ae60c8&content-type=image%2Fjpeg&x-amz-security-token=token&Expires=167327844
+        jobId:
+          type: string
+          example: fd440257-1552-47e7-93a9-87d7f7ae60c8
+    PdfGetterResponse:
+      type: object
+      properties:
+        jobIdList:
+          description: list of all the job id of the pdf in the db
+          type: array
+          example: 
+            [fd440257-1552-47e7-93a9-87d7f7ae60c8, fd440257-1552-47e7-93a9-87d7f7ae60c9]
+        nameList:
+          description: list of all the name of the pdf in the db
+          type: array
+          example:
+            ["test-pdf.pdf", "test-pdf1.pdf"]
+    PdfGetSummarizedResponse:
+      type: object
+      properties:
+        url:
+          description: The URL of the summarized pdf. Will be returned only if the status is "success"
+          type: string
+          example:
+            https://some-processed-bucket.s3.amazonaws.com/test-image?AWSAccessKeyId=AWSAccessKeyId&Signature=Signature&x-amz-meta-job-id=fd440257-1552-47e7-93a9-87d7f7ae60c8&content-type=image%2Fjpeg&x-amz-security-token=token&Expires=1673278444
+        status:
+          type: string
+          example: processing
+          description: |
+            The status of the image processing job.
+
+            "created": When the request for an pdf upload was made and the upload url and job ID were created.
+
+            "processing": When the processing of the pdf starts.
+
+            "failure": When the processing of the pdf has failed.
+
+            "success": When the processing of the pdf ended and was successful.
+          enum:
+            - created
+            - processing
+            - failure
+            - success
+    PdfGetQuestionsResponse:
+      type: object
+      properties:
+        url:
+          description: The URL of the questions data. Will be returned only if the status is "success"
+          type: string
+          example:
+            https://some-processed-bucket.s3.amazonaws.com/test-image?AWSAccessKeyId=AWSAccessKeyId&Signature=Signature&x-amz-meta-job-id=fd440257-1552-47e7-93a9-87d7f7ae60c8&content-type=image%2Fjpeg&x-amz-security-token=token&Expires=1673278444
+        status:
+          type: string
+          example: processing
+          description: |
+            The status of the image processing job.
+
+            "created": When the request for an pdf upload was made and the upload url and job ID were created.
+
+            "processing": When the processing of the pdf starts.
+
+            "failure": When the processing of the pdf has failed.
+
+            "success": When the processing of the pdf ended and was successful.
+          enum:
+            - created
+            - processing
+            - failure
+            - success
+    PdfGetStudiesResponse:
+      type: object
+      properties:
+        url:
+          description: The URL of the questions data. Will be returned only if the status is "success"
+          type: string
+          example:
+            https://some-processed-bucket.s3.amazonaws.com/test-image?AWSAccessKeyId=AWSAccessKeyId&Signature=Signature&x-amz-meta-job-id=fd440257-1552-47e7-93a9-87d7f7ae60c8&content-type=image%2Fjpeg&x-amz-security-token=token&Expires=1673278444
+        status:
+          type: string
+          example: processing
+          description: |
+            The status of the image processing job.
+
+            "created": When the request for an pdf upload was made and the upload url and job ID were created.
+
+            "processing": When the processing of the pdf starts.
+
+            "failure": When the processing of the pdf has failed.
+
+            "success": When the processing of the pdf ended and was successful.
+          enum:
+            - created
+            - processing
+            - failure
+            - success

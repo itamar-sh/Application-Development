@@ -1,0 +1,677 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Cloudformation template for resources needed for contentify app
+
+Parameters:
+  CodePackageDate:
+    Description: The date of the code package in ms.
+    Type: String
+
+Resources:
+  ContentifyPdfS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub contentify-original-pdf-bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
+  ContentifyTextS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub contentify-original-text-bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
+  ContentifySummarizedPdfS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub contentify-summarized-pdf-bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
+  ContentifytQuestions3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub contentify-questions-bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
+  ContentifytStudies3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub contentify-studies-bucket
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
+
+
+  PdfTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: contentify-pdf
+      AttributeDefinitions:
+        - AttributeName: pdf_job_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pdf_job_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+
+  PdfUploadingLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-pdf-uploading-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-pdf-uploading-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  !Sub
+                  - ${ContentifyPdfS3BucketArn}/*
+                  - ContentifyPdfS3BucketArn: !GetAtt ContentifyPdfS3Bucket.Arn
+
+  PdfUploadingLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-pdf-uploading-lambda
+      Handler: lambdas.pdf_uploader.handler
+      Role: !GetAtt PdfUploadingLambdaRole.Arn
+      Timeout: 25
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      FunctionUrlConfig:
+        AuthType: NONE
+      Environment:
+        Variables:
+          PDF_BUCKET_NAME: !Sub contentify-original-pdf-bucket
+
+  PdfUploadingLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PdfUploadingLambdaFunction}
+      RetentionInDays: 3
+
+
+  PdfProcessorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-pdf-processor-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-pdf-processor-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem*
+                  - dynamodb:Query
+                Resource: !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  !Sub
+                  - ${ContentifyTextS3BucketArn}/*
+                  - ContentifyTextS3BucketArn: !GetAtt ContentifyTextS3Bucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-original-pdf-bucket*
+
+  PdfProcessorLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-pdf-processor-lambda
+      Handler: lambdas.pdf_processor.handler
+      Role: !GetAtt PdfProcessorLambdaRole.Arn
+      Timeout: 500
+      MemorySize: 10240
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.9
+      Events:
+        CreatedPdfEvent:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: ContentifyPdfS3Bucket
+            Events: s3:ObjectCreated:*
+      Environment:
+        Variables:
+          TEXT_BUCKET_NAME: !Sub contentify-original-text-bucket
+
+  PdfProcessorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PdfProcessorLambdaFunction}
+      RetentionInDays: 3
+
+
+
+
+
+  SummaryProcessorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-summary-processor-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-summary-processor-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem*
+                  - dynamodb:Query
+                Resource: !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  !Sub
+                  - ${ContentifySummarizedPdfS3BucketArn}/*
+                  - ContentifySummarizedPdfS3BucketArn: !GetAtt ContentifySummarizedPdfS3Bucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-original-text-bucket*
+
+  SummaryProcessorLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-summary-processor-lambda-policy
+      Handler: lambdas.summary_processor.handler
+      Role: !GetAtt SummaryProcessorLambdaRole.Arn
+      Timeout: 500
+      MemorySize: 10240
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      Events:
+        CreatedTextEvent:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: ContentifyTextS3Bucket
+            Events: s3:ObjectCreated:*
+      Environment:
+        Variables:
+          SUMMARIZED_PDF_BUCKET_NAME: !Sub contentify-summarized-pdf-bucket
+
+  SummaryProcessorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${SummaryProcessorLambdaFunction}
+      RetentionInDays: 3
+
+
+
+
+  StudiesProcessorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-studies-processor-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-studies-processor-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem*
+                  - dynamodb:Query
+                Resource: !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  !Sub
+                  - ${ContentifytStudies3BucketArn}/*
+                  - ContentifytStudies3BucketArn: !GetAtt ContentifytStudies3Bucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-summarized-pdf-bucket*
+
+  StudiesProcessorLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-studies-processor-lambda-policy
+      Handler: lambdas.studies_processor.handler
+      Role: !GetAtt StudiesProcessorLambdaRole.Arn
+      Timeout: 500
+      MemorySize: 10240
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      Events:
+        CreatedSummaryEvent:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: ContentifySummarizedPdfS3Bucket
+            Events: s3:ObjectCreated:*
+      Environment:
+        Variables:
+          STUDIES_PDF_BUCKET_NAME: !Sub contentify-studies-bucket
+
+  StudiesProcessorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${StudiesProcessorLambdaFunction}
+      RetentionInDays: 3
+
+
+
+  QuestionsProcessorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-questions-processor-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-questions-processor-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem*
+                  - dynamodb:Query
+                Resource: !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource:
+                  !Sub
+                  - ${ContentifytQuestions3BucketArn}/*
+                  - ContentifytQuestions3BucketArn: !GetAtt ContentifytQuestions3Bucket.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-summarized-pdf-bucket*
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-studies-bucket*
+
+  QuestionsProcessorLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-questions-processor-lambda-policy
+      Handler: lambdas.questions_processor.handler
+      Role: !GetAtt QuestionsProcessorLambdaRole.Arn
+      Timeout: 500
+      MemorySize: 10240
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      Events:
+        CreatedSummaryEvent:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: ContentifytStudies3Bucket
+            Events: s3:ObjectCreated:*
+      Environment:
+        Variables:
+          QUESTION_PDF_BUCKET_NAME: !Sub contentify-questions-bucket
+
+  QuestionsProcessorLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${QuestionsProcessorLambdaFunction}
+      RetentionInDays: 3
+
+
+  PdfSummarizedLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-pdf-summarized-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-pdf-summarized-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-summarized-pdf-bucket*
+
+  PdfSummarizedLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-pdf-summarized-lambda
+      Handler: lambdas.get_summary.handler
+      Role: !GetAtt PdfSummarizedLambdaRole.Arn
+      Timeout: 25
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      FunctionUrlConfig:
+        AuthType: NONE
+
+  PdfSummarizedLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PdfSummarizedLambdaFunction}
+      RetentionInDays: 3
+
+
+  QuestionsLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-questions-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-questions-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-questions-bucket*
+
+  QuestionsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-questions-lambda
+      Handler: lambdas.get_questions.handler
+      Role: !GetAtt QuestionsLambdaRole.Arn
+      Timeout: 25
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      FunctionUrlConfig:
+        AuthType: NONE
+
+  QuestionsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${QuestionsLambdaFunction}
+      RetentionInDays: 3
+
+
+  StudiesLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: huji-lightricks-contentify-Studies-lambda-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: contentify-Studies-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt PdfTable.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  !Sub arn:aws:s3:::contentify-studies-bucket*
+
+  StudiesLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-studies-lambda
+      Handler: lambdas.get_studies.handler
+      Role: !GetAtt StudiesLambdaRole.Arn
+      Timeout: 25
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      FunctionUrlConfig:
+        AuthType: NONE
+
+  StudiesLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${StudiesLambdaFunction}
+      RetentionInDays: 3
+
+
+  GetPdfsLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: huji-lightricks-contentify-get-pdfs-lambda-role
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: contentify-get-pdfs-lambda-policy
+            PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:PutItem
+                  Resource:
+                    - !GetAtt PdfTable.Arn
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Scan
+                  Resource:
+                    - !GetAtt PdfTable.Arn
+
+
+  GetPdfsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: contentify-get-pdfs-lambda
+      Handler: lambdas.get_pdfs.handler
+      Role: !GetAtt GetPdfsLambdaRole.Arn
+      Timeout: 25
+      CodeUri:
+        Bucket:
+          Fn::ImportValue: !Sub contentify-code-bucket-name
+        Key: !Sub ${CodePackageDate}-code-package.zip
+      Runtime: python3.8
+      FunctionUrlConfig:
+        AuthType: NONE
+
+  GetPdfsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${GetPdfsLambdaFunction}
+      RetentionInDays: 3
+
+
+Outputs:
+  PdfUploadingUrl:
+    Description: The URL of the pdf uploading lambda
+    Value:
+      Fn::GetAtt: PdfUploadingLambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: contentify-pdf-uploading-lambda
+
+  PdfSummarizedUrl:
+    Description: The URL of the summarized lambda
+    Value:
+      Fn::GetAtt: PdfSummarizedLambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: contentify-pdf-summarized-lambda-url
+
+  QuestionsUrl:
+    Description: The URL of the questions lambda
+    Value:
+      Fn::GetAtt: QuestionsLambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: contentify-questions-lambda-url
+
+  StudiesUrl:
+    Description: The URL of the studies lambda
+    Value:
+      Fn::GetAtt: StudiesLambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: contentify-studies-lambda-url
+
+  GetPdfsUrl:
+    Description: The URL of the get pdfs lambda
+    Value:
+      Fn::GetAtt: GetPdfsLambdaFunctionUrl.FunctionUrl
+    Export:
+      Name: contentify-get-pdfs-lambda-url
