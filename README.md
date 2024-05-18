@@ -23,7 +23,7 @@ On the left screen there are 3 buttons to navigate to the three results screens.
   style="display: inline-block; margin: 0 auto;" width="808" height="400"><br/>
 
 The remaining 3 Fragments are much simpler, a simple scroll view that get’s his text
-with a matched getter lambda specific bucket using url.
+with a matched getter lambda specific bucket using url.<br/>
 <img
   src="images/combined logc.png"
   style="display: inline-block; margin: 0 auto;" width="579" height="430"><br/>
@@ -65,7 +65,7 @@ At last we have the studies Fragment with get_studies and studies bucket.<br/>
 The app knows if the data is ready via the status from the DynamoDB.<br/>
 <br/><img
   src="images/Gets logic.png"
-  style="display: inline-block; margin: 0 auto;" width="300" height="200"><br/>
+  style="display: inline-block; margin: 0 auto;" width="255" height="207"><br/>
 
 
 ## The Challenge
