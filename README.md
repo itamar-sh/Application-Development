@@ -24,7 +24,9 @@ On the left screen there are 3 buttons to navigate to the three results screens.
 
 The remaining 3 Fragments are much simpler, a simple scroll view that get’s his text
 with a matched getter lambda specific bucket using url.
-
+<img
+  src="images/combined logc.png"
+  style="display: inline-block; margin: 0 auto;" width="579" height="430"><br/>
 
 ## Backend
 The backend is based on AWS.<br/>
