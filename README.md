@@ -78,3 +78,20 @@ Lastly, after we found a solution, we encounter a problem of deploying those big
 The fact that aws lambda runs on Linux was the final straw, the models and libraries were
 problematic to import.<br/>
 After all this story we chose to use only Chat GPT through Openai API.
+
+## Common Questions
+#### Q: What are the advantages of Kotlin over other languages, compare it to java in realtion to application development?
+**A:**<br/>
+*Null safety:* Kotlin eliminates null pointer exceptions with its type system.<br/>
+*Concise syntax:* Kotlin reduces boilerplate code, making code easier to read and write.<br/>
+*Interoperability:* Kotlin seamlessly interoperates with Java, allowing gradual migration.<br/>
+*Coroutines:* Kotlin simplifies asynchronous programming with lightweight coroutines.<br/>
+*Smart casts:* Kotlin automatically casts variables to the correct type after checks.<br/>
+*Extension functions:* Kotlin allows adding functionality to existing classes without inheriting them.<br/>
+For example: ???
+
+#### Q: Explaon what is lambda function in aws?
+**A:**<br/>
+
+#### Q: Explaon how the data is moving from the app to the cloud, especially how the pdf is uploaded to the cloud?
+**A:**<br/>
