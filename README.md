@@ -92,6 +92,13 @@ For example: ???
 
 #### Q: Explaon what is lambda function in aws?
 **A:**<br/>
+A Lambda function in AWS is a serverless compute service.
+It allows you to run code without provisioning or managing servers.
+You can execute your code in response to events or triggers, such as changes in data, shifts in system state and in my case HTTP request.
 
 #### Q: Explaon how the data is moving from the app to the cloud, especially how the pdf is uploaded to the cloud?
 **A:**<br/>
+The pdf is stored in S3 Bucket, we are able to upload it via designated url.
+How we get this designated url? We get it as HTTP response from an aws lambfa.
+We have a url that accept specific http requests, and he returnes back the designated url for the S3 Bucket.
+The url for the aws lambda is hard coded in our code. In the future we will store it with password and keys under some DB.
