@@ -99,6 +99,7 @@ You can execute your code in response to events or triggers, such as changes in 
 #### Q: Explaon how the data is moving from the app to the cloud, especially how the pdf is uploaded to the cloud?
 **A:**<br/>
 The pdf is stored in S3 Bucket, we are able to upload it via designated url.
-How we get this designated url? We get it as HTTP response from an aws lambfa.
+How we get this designated url? When we uploaded the code to aws we got the urls as stored them in a file.
+We get it as HTTP response from an aws lambda.
 We have a url that accept specific http requests, and he returnes back the designated url for the S3 Bucket.
 The url for the aws lambda is hard coded in our code. In the future we will store it with password and keys under some DB.
