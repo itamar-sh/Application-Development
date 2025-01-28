@@ -180,7 +180,7 @@ Resources:
       Handler: lambdas.pdf_processor.handler
       Role: !GetAtt PdfProcessorLambdaRole.Arn
       Timeout: 500
-      MemorySize: 10240
+      MemorySize: 2048
       CodeUri:
         Bucket:
           Fn::ImportValue: !Sub contentify-code-bucket-name
@@ -253,7 +253,7 @@ Resources:
       Handler: lambdas.summary_processor.handler
       Role: !GetAtt SummaryProcessorLambdaRole.Arn
       Timeout: 500
-      MemorySize: 10240
+      MemorySize: 2048
       CodeUri:
         Bucket:
           Fn::ImportValue: !Sub contentify-code-bucket-name
@@ -325,7 +325,7 @@ Resources:
       Handler: lambdas.studies_processor.handler
       Role: !GetAtt StudiesProcessorLambdaRole.Arn
       Timeout: 500
-      MemorySize: 10240
+      MemorySize: 2048
       CodeUri:
         Bucket:
           Fn::ImportValue: !Sub contentify-code-bucket-name
@@ -400,7 +400,7 @@ Resources:
       Handler: lambdas.questions_processor.handler
       Role: !GetAtt QuestionsProcessorLambdaRole.Arn
       Timeout: 500
-      MemorySize: 10240
+      MemorySize: 2048
       CodeUri:
         Bucket:
           Fn::ImportValue: !Sub contentify-code-bucket-name

@@ -339,7 +339,6 @@ def get_lambdas_urls(stack_name_to_check: str) -> Tuple[Optional[str], Optional[
     pdf_uploading_url, pdf_summarized_url, pdf_questions_url, pdf_studies_url, get_pdfs_url = \
         None, None, None, None, None
     for output in stack.outputs:
-
         if output["OutputKey"] == "PdfUploadingUrl":
             pdf_uploading_url = output["OutputValue"]
         if output["OutputKey"] == "PdfSummarizedUrl":
